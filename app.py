@@ -6,7 +6,8 @@ import datetime
 
 # Read config file as stream
 config = dict()
-with open('config.yaml') as stream:
+dirPath = os.path.dirname(os.path.realpath(__file__))  # get current path
+with open(os.path.join(dirPath, 'config.yaml')) as stream:
     config = yaml.safe_load(stream)
 
 
