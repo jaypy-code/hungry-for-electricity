@@ -35,7 +35,8 @@ def log(message):
         try:
             mode = 'a' if os.path.exists(config['log']['path']) else 'w'
             with open(config['log']['path'], mode) as file:
-                file.write('['+str(datetime.datetime.now())+'] ' + message+'\n')
+                file.write(
+                    '['+str(datetime.datetime.now())+'] ' + message+'\n')
         except:
             print("Error while log")
             pass
@@ -44,14 +45,15 @@ def log(message):
 
 
 def setBrightness(level):
-    try:
-        # convert percent of brightness in config to system
-        level = int((level * maxBrightness) / 100)
-        brightnessFile = open(brightnessFilePath, 'w')
-        brightnessFile.write(str(level))
-        brightnessFile.close()
-    except:
-        log("Permission to write " + brightnessFilePath + "file")
+    if config['backlight']['enable'] == True:
+        try:
+            # convert percent of brightness in config to system
+            level = int((level * maxBrightness) / 100)
+            brightnessFile = open(brightnessFilePath, 'w')
+            brightnessFile.write(str(level))
+            brightnessFile.close()
+        except:
+            log("Permission to write " + brightnessFilePath + "file")
 
 # battery percent charge
 
@@ -79,7 +81,6 @@ def clearNotifications():
 def amINowCharging(status):
     #  was n't charing = True     and    now is charging
     if lastStatus.startswith('D') and status.startswith('C'):
-        print("Chargning ...")
         notification("Oh, yees :)")
         setBrightness(config['backlight']['charging'])
         pass  # TODO: Play mp3 file or use notification function and more ...
@@ -88,7 +89,6 @@ def amINowCharging(status):
 def amINowDischarging(status):
     #    was charging = True      and   now is discharging
     if lastStatus.startswith('C') and status.startswith('D'):
-        print("Discharging ...")
         notification("Oh noo :(")
         setBrightness(config['backlight']['discharging'])
         pass  # TODO: Play mp3 file or use notification function and more ...
@@ -160,4 +160,4 @@ def interval():
 
 # excute the function for each time
 setInterval(interval, config['interval']['time'])
-log("App running ...")
+print("App running ...")

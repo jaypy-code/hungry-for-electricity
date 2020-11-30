@@ -2,6 +2,7 @@ battery:
   path: '/sys/class/power_supply/BAT1'
   minLevel: 15
 backlight:
+  enable: True
   path: '/sys/class/backlight/intel_backlight'
   charging: 90
   discharging: 40
