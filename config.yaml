@@ -1,0 +1,13 @@
+battery:
+  path: '/sys/class/power_supply/BAT1'
+  minLevel: 15
+backlight:
+  path: '/sys/class/backlight/intel_backlight'
+  charging: 90
+  discharging: 40
+interval:
+  time: 1
+log:
+  enable: true
+  path: '/home/jaypy/.hungry-for-electricity.log'
+  

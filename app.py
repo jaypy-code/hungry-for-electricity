@@ -1,14 +1,26 @@
 import os
 import threading
 import subprocess
+import yaml
+import datetime
 
-path = "/sys/class/power_supply/BAT1"  # Battery system folder
+# Read config file as stream
+config = dict()
+with open('config.yaml') as stream:
+    config = yaml.safe_load(stream)
+
+
+# current screen (monitor) brightness level
+brightnessFilePath = os.path.join(config['backlight']['path'], 'brightness')
+# max screen (monitor) brightness level
+maxBrightnessFilePath = os.path.join(
+    config['backlight']['path'], 'max_brightness')
+# Read and set max screen (monitor) brightness level
+maxBrightness = int(open(maxBrightnessFilePath, 'r').read())
 # current battery capacity lavel/percent
-capacityFile = os.path.join(path, 'capacity')
+capacityFilePath = os.path.join(config['battery']['path'], 'capacity')
 # current battery status (Charging, Discharging, Full, Unknow)
-statusFile = os.path.join(path, 'status')
-minCapacity = 15  # min battery capacity level/percent could be
-time = 1  # execute interval function for how many second(s) ?
+statusFilePath = os.path.join(config['battery']['path'], 'status')
 # last stored status/last status at last executed function for ${time} second(s) !
 global lastStatus
 lastStatus = ''
@@ -18,14 +30,41 @@ global said  # It's just used for doINeedDischarge and doINeedCharge
 said = False
 
 
+def log(message):
+    if config['log']['enable'] == True:
+        try:
+            mode = 'a' if os.path.exists(config['log']['path']) else 'w'
+            with open(config['log']['path'], mode) as file:
+                file.write('['+str(datetime.datetime.now())+'] ' + message+'\n')
+        except:
+            print("Error while log")
+            pass
+
+# set screen (monitor) brightness
+
+
+def setBrightness(level):
+    try:
+        # convert percent of brightness in config to system
+        level = int((level * maxBrightness) / 100)
+        brightnessFile = open(brightnessFilePath, 'w')
+        brightnessFile.write(str(level))
+        brightnessFile.close()
+    except:
+        log("Permission to write " + brightnessFilePath + "file")
+
+# battery percent charge
+
+
 def getPercent():
-    file = open(capacityFile, 'r').read()
-    return int(file)
+    return int(open(capacityFilePath, 'r').read())
+
+# battery status
+# returns: (Charging, Discharging, Full, Unknow)
 
 
 def getStatus():
-    file = open(statusFile, 'r').read()
-    return str(file)
+    return str(open(statusFilePath, 'r').read())
 
 
 def notification(message):
@@ -40,21 +79,25 @@ def clearNotifications():
 def amINowCharging(status):
     #  was n't charing = True     and    now is charging
     if lastStatus.startswith('D') and status.startswith('C'):
+        print("Chargning ...")
         notification("Oh, yees :)")
+        setBrightness(config['backlight']['charging'])
         pass  # TODO: Play mp3 file or use notification function and more ...
 
 
 def amINowDischarging(status):
     #    was charging = True      and   now is discharging
     if lastStatus.startswith('C') and status.startswith('D'):
+        print("Discharging ...")
         notification("Oh noo :(")
+        setBrightness(config['backlight']['discharging'])
         pass  # TODO: Play mp3 file or use notification function and more ...
 
 
 def doINeedCharge(percent, status):
     global said
     #    10    <=    15       and   is discharched
-    if percent <= minCapacity and status.startswith("D"):
+    if percent <= config['battery']['minLevel'] and status.startswith("D"):
         said = True
         notification("Need electricity to eat !!!")
         pass  # TODO: Play mp3 file or use notification function and more ...
@@ -70,7 +113,7 @@ def doINeedDischarge(status):
 
 
 def doIDoNothing(percent, status):
-    return minCapacity < percent and percent <= 100
+    return config['battery']['minLevel'] < percent and percent <= 100
 
 
 def changeSaid(percent, status):
@@ -80,7 +123,7 @@ def changeSaid(percent, status):
         if(lastStatus.startswith('F') and status.startswith('D')):
             said = False
         # last percent was less then min and now is more then min
-        elif(lastPercent <= minCapacity and minCapacity < percent):
+        elif(lastPercent <= config['battery']['minLevel'] and config['battery']['minLevel'] < percent):
             said = False
         else:
             pass
@@ -116,4 +159,5 @@ def interval():
 
 
 # excute the function for each time
-setInterval(interval, time)
+setInterval(interval, config['interval']['time'])
+log("App running ...")
